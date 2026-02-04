@@ -15,7 +15,7 @@ Once your org is set up (see below), enabling CLA on a repo is just:
 
 ```bash
 mkdir -p .github/workflows
-curl -o .github/workflows/cla.yml https://raw.githubusercontent.com/netfoundry/cla/main/workflow-template/cla.yml
+curl -so .github/workflows/cla.yml https://raw.githubusercontent.com/netfoundry/cla/main/workflow-template/cla.yml
 ```
 
 That's it. The workflow calls the reusable workflow in this repo, so all logic is centralized.
