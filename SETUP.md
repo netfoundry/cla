@@ -14,7 +14,8 @@ This guide explains how to enable CLA checking on repositories in the NetFoundry
 Once your org is set up (see below), enabling CLA on a repo is just:
 
 ```bash
-cp workflow-template/cla.yml <your-repo>/.github/workflows/cla.yml
+mkdir -p .github/workflows
+curl -o .github/workflows/cla.yml https://raw.githubusercontent.com/netfoundry/cla/main/workflow-template/cla.yml
 ```
 
 That's it. The workflow calls the reusable workflow in this repo, so all logic is centralized.
