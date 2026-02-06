@@ -5,7 +5,7 @@ This guide explains how to enable CLA checking on repositories in the NetFoundry
 ## How It Works
 
 - Contributors sign the CLA **once** by commenting on any PR
-- Their signature is stored in `signatures/cla.json` in this repo
+- Their signature is stored in a versioned JSON file (e.g., `v1.1/cla.json`) in this repo
 - All future PRs from that contributor automatically pass
 - Organization members/owners are automatically skipped (covered by employment agreements)
 
@@ -115,7 +115,7 @@ done
 2. Create a PR from an account that hasn't signed the CLA
 3. Verify the bot comments asking for a signature
 4. Sign by commenting: `I have read the CLA Document and I hereby sign the CLA`
-5. Verify the signature appears in `signatures/cla.json` in this repo
+5. Verify the signature appears in the versioned `cla.json` (e.g., `v1.1/cla.json`) in this repo
 6. Verify the PR status check passes
 
 ## Organization Members
@@ -132,7 +132,7 @@ These accounts bypass the CLA check:
 
 To add additional users (e.g., contractors not in the org), either:
 - Add them to the allowlist in `cla-workflow.yml`
-- Or add them directly to `signatures/cla.json`
+- Or add them directly to the current version's `cla.json`
 
 ## CLA Documents
 
@@ -141,6 +141,22 @@ The workflows link to the official NetFoundry CLA PDFs:
 - **Corporate CLA:** https://netfoundry.io/docs/assets/files/NetFoundry-CCLA-a68e768031f697589e7d435f17e0cf31.pdf
 
 If these URLs change, update the `path-to-document` value in `cla-workflow.yml`.
+
+## Updating the CLA Version
+
+When you release a new version of the ICLA (e.g., v1.2, v2.0), you can force all contributors to re-sign. No changes are needed in any other repository - the reusable workflow handles everything centrally.
+
+1. Add the new PDF to `signatures/` (e.g., `NetFoundry-ICLA-v2.0.pdf`)
+2. Update two lines in `.github/workflows/cla-workflow.yml`:
+   ```yaml
+   path-to-signatures: 'v2.0/cla.json'
+   path-to-document: 'https://github.com/netfoundry/cla/raw/main/signatures/NetFoundry-ICLA-v2.0.pdf'
+   ```
+3. Commit and push to `main`
+
+The new version directory and `cla.json` file will be created automatically when the first contributor signs. Since the new `cla.json` starts empty, every contributor will be prompted to re-sign.
+
+Previous signatures are preserved in their version directories (e.g., `v1.1/cla.json`) as a historical record.
 
 ## Troubleshooting
 
