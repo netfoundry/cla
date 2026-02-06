@@ -137,7 +137,7 @@ To add additional users (e.g., contractors not in the org), either:
 ## CLA Documents
 
 The workflows link to the official NetFoundry CLA PDFs:
-- **Individual CLA:** https://netfoundry.io/docs/assets/files/NetFoundry-ICLA-32974791ae564dd1878a7d2ab1ab8d5e.pdf
+- **Individual CLA:** https://github.com/netfoundry/cla/raw/main/signatures/NetFoundry-ICLA-v1.1.pdf
 - **Corporate CLA:** https://netfoundry.io/docs/assets/files/NetFoundry-CCLA-a68e768031f697589e7d435f17e0cf31.pdf
 
 If these URLs change, update the `path-to-document` value in `cla-workflow.yml`.
