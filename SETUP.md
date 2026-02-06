@@ -130,7 +130,6 @@ These accounts bypass the CLA check:
 - `dependabot[bot]`
 - `renovate[bot]`
 - `github-actions[bot]`
-- Any account matching `bot*`
 
 To add additional users (e.g., contractors not in the org), either:
 - Add them to the allowlist in `cla-workflow.yml`
