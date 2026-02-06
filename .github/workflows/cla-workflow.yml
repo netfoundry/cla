@@ -13,9 +13,9 @@ on:
   workflow_call:
     secrets:
       CLA_APP_ID:
-        required: true
+        required: false
       CLA_APP_PRIVATE_KEY:
-        required: true
+        required: false
 
 jobs:
   CLAAssistant:
