@@ -91,7 +91,9 @@ permissions:
 jobs:
   cla:
     uses: netfoundry/cla/.github/workflows/cla-workflow.yml@main
-    secrets: inherit
+    secrets:
+      CLA_APP_ID: ${{ secrets.CLA_APP_ID }}
+      CLA_APP_PRIVATE_KEY: ${{ secrets.CLA_APP_PRIVATE_KEY }}
 ```
 
 **Using gh CLI to add to multiple repos:**
