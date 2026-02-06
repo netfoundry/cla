@@ -137,7 +137,7 @@ To add additional users (e.g., contractors not in the org), either:
 ## CLA Documents
 
 The workflows link to the official NetFoundry CLA PDFs:
-- **Individual CLA:** https://github.com/netfoundry/cla/raw/main/signatures/NetFoundry-ICLA-v1.1.pdf
+- **Individual CLA:** https://github.com/netfoundry/cla/raw/main/v1.1/NetFoundry-ICLA-v1.1.pdf
 - **Corporate CLA:** https://netfoundry.io/docs/assets/files/NetFoundry-CCLA-a68e768031f697589e7d435f17e0cf31.pdf
 
 If these URLs change, update the `path-to-document` value in `cla-workflow.yml`.
@@ -146,11 +146,11 @@ If these URLs change, update the `path-to-document` value in `cla-workflow.yml`.
 
 When you release a new version of the ICLA (e.g., v1.2, v2.0), you can force all contributors to re-sign. No changes are needed in any other repository - the reusable workflow handles everything centrally.
 
-1. Add the new PDF to `signatures/` (e.g., `NetFoundry-ICLA-v2.0.pdf`)
+1. Add the new PDF to a new version directory (e.g., `v2.0/NetFoundry-ICLA-v2.0.pdf`)
 2. Update two lines in `.github/workflows/cla-workflow.yml`:
    ```yaml
    path-to-signatures: 'v2.0/cla.json'
-   path-to-document: 'https://github.com/netfoundry/cla/raw/main/signatures/NetFoundry-ICLA-v2.0.pdf'
+   path-to-document: 'https://github.com/netfoundry/cla/raw/main/v2.0/NetFoundry-ICLA-v2.0.pdf'
    ```
 3. Commit and push to `main`
 

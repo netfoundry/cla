@@ -58,7 +58,7 @@ jobs:
           PERSONAL_ACCESS_TOKEN: ${{ steps.app-token.outputs.token }}
         with:
           path-to-signatures: 'v1.1/cla.json'
-          path-to-document: 'https://github.com/netfoundry/cla/raw/main/signatures/NetFoundry-ICLA-v1.1.pdf'
+          path-to-document: 'https://github.com/netfoundry/cla/raw/main/v1.1/NetFoundry-ICLA-v1.1.pdf'
           branch: 'main'
           allowlist: dependabot[bot],renovate[bot],github-actions[bot],bot*
           remote-organization-name: netfoundry

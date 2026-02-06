@@ -51,5 +51,5 @@ This CLA applies to all repositories in:
 - Open an [issue](https://github.com/netfoundry/cla/issues) in this repository
 - Email us at cla@netfoundry.io
 
-[ICLA]: https://github.com/netfoundry/cla/raw/main/signatures/NetFoundry-ICLA-v1.1.pdf
+[ICLA]: https://github.com/netfoundry/cla/raw/main/v1.1/NetFoundry-ICLA-v1.1.pdf
 [CCLA]: https://netfoundry.io/docs/assets/files/NetFoundry-CCLA-a68e768031f697589e7d435f17e0cf31.pdf
