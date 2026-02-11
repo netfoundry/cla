@@ -1,4 +1,12 @@
 {
   "signedContributors": [
+    {
+      "name": "dmuensterer",
+      "id": 46055597,
+      "comment_id": 3886301395,
+      "created_at": "2026-02-11T18:54:55Z",
+      "repoId": 212601166,
+      "pullRequestNo": 991
+    }
   ]
 }
