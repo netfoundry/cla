@@ -20,13 +20,13 @@ on:
 jobs:
   CLAAssistant:
     runs-on: ubuntu-latest
-    # Skip CLA check for org members/owners (they're covered by employment agreement)
-    # But always run for issue_comment events (to process signatures)
-    if: |
+    # Skip CLA check for org members/collaborators/owners (covered by employment agreement)
+    # COLLABORATOR = access via team permissions, MEMBER = org member, OWNER = org owner
+    # Always run for issue_comment events so external contributors can sign via PR comment
+    if: >-
       github.event_name == 'issue_comment' ||
-      (github.event_name == 'pull_request_target' &&
-       github.event.pull_request.author_association != 'MEMBER' &&
-       github.event.pull_request.author_association != 'OWNER')
+      !contains(fromJSON('["MEMBER","COLLABORATOR","OWNER"]'),
+        github.event.pull_request.author_association)
     steps:
       - name: Debug - Workflow Version
         run: echo "CLA Workflow v3 - Reusable workflow with GitHub App auth (2026-02-04)"
