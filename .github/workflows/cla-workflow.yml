@@ -64,9 +64,11 @@ jobs:
             while IFS= read -r user; do
               [[ -z "$user" ]] && continue
               PERM=$(gh api "repos/$BASE_REPO/collaborators/$user/permission" --jq '.permission' 2>/dev/null || echo "none")
-              echo "Permission level for $user: $PERM"
               if [[ "$PERM" == "admin" || "$PERM" == "maintain" || "$PERM" == "write" ]]; then
+                echo "$user: CLA not needed (exempt)"
                 EXEMPT="${EXEMPT:+$EXEMPT,}$user"
+              else
+                echo "$user: CLA needed"
               fi
             done <<< "$COMMITTERS"
           fi
@@ -113,3 +115,7 @@ jobs:
           allowlist: ${{ steps.check-perms.outputs.allowlist }}
           remote-organization-name: netfoundry
           remote-repository-name: cla
+          suggest-recheck: false
+          custom-notsigned-prcomment: |
+            Thank you for your submission! Please read and sign our [Contributor License Agreement]($pathToCLADocument) before we can accept your contribution.
+            <br/>You can retrigger this check by commenting **recheck cla** on this PR.
