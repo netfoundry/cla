@@ -20,45 +20,63 @@ on:
 jobs:
   CLAAssistant:
     runs-on: ubuntu-latest
-    # Always run for issue_comment events so external contributors can sign via PR comment.
-    # For pull_request_target events, permission check happens in steps below.
     if: >-
       github.event_name == 'issue_comment' ||
       github.event_name == 'pull_request_target'
     steps:
       - name: Debug - Workflow Version
-        run: echo "CLA Workflow v4 - Skip CLA for contributors with write access (2026-02-13)"
+        run: echo "CLA Workflow v5 - Permission-based exemption (2026-02-13)"
 
-      - name: Check if CLA is required
-        id: cla-required
-        if: github.event_name == 'pull_request_target'
+      - name: Check contributor permissions
+        id: check-perms
         run: |
-          # Non-fork PRs: author has push access, skip CLA
-          if [[ "$HEAD_REPO" == "$BASE_REPO" ]]; then
-            echo "skip=true" >> $GITHUB_OUTPUT
-            echo "Non-fork PR - CLA not required"
+          BASE_ALLOWLIST="dependabot[bot],renovate[bot],github-actions[bot]"
+
+          # Get PR author and head repo - from event context or API
+          if [[ -n "$PR_AUTHOR" ]]; then
+            AUTHOR="$PR_AUTHOR"
+            HEAD="$PR_HEAD_REPO"
+          elif [[ -n "$PR_NUMBER" ]]; then
+            PR_JSON=$(gh api "repos/$BASE_REPO/pulls/$PR_NUMBER" 2>/dev/null || echo '{}')
+            AUTHOR=$(echo "$PR_JSON" | jq -r '.user.login // empty')
+            HEAD=$(echo "$PR_JSON" | jq -r '.head.repo.full_name // empty')
+          fi
+
+          if [[ -z "$AUTHOR" ]]; then
+            echo "allowlist=$BASE_ALLOWLIST" >> $GITHUB_OUTPUT
             exit 0
           fi
 
-          # Fork PRs: check if author has write permission on the base repo
+          # Non-fork PRs: author has push access
+          if [[ "$HEAD" == "$BASE_REPO" || -z "$HEAD" ]]; then
+            echo "Non-fork PR by $AUTHOR - exempt from CLA"
+            echo "allowlist=$BASE_ALLOWLIST,$AUTHOR" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Fork PRs: check if author has write+ permission
           PERM=$(gh api "repos/$BASE_REPO/collaborators/$AUTHOR/permission" --jq '.permission' 2>/dev/null || echo "none")
           echo "Permission level for $AUTHOR: $PERM"
           if [[ "$PERM" == "admin" || "$PERM" == "maintain" || "$PERM" == "write" ]]; then
-            echo "skip=true" >> $GITHUB_OUTPUT
-            echo "Author has write access - CLA not required"
+            echo "$AUTHOR has $PERM access - exempt from CLA"
+            echo "allowlist=$BASE_ALLOWLIST,$AUTHOR" >> $GITHUB_OUTPUT
           else
-            echo "skip=false" >> $GITHUB_OUTPUT
-            echo "Author does not have write access - CLA required"
+            echo "$AUTHOR has $PERM access - CLA required"
+            echo "allowlist=$BASE_ALLOWLIST" >> $GITHUB_OUTPUT
           fi
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
           BASE_REPO: ${{ github.repository }}
-          AUTHOR: ${{ github.event.pull_request.user.login }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          PR_HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          PR_NUMBER: ${{ github.event.pull_request.number || github.event.issue.number }}
 
       - name: Generate GitHub App Token
-        if: steps.cla-required.outputs.skip != 'true'
         id: app-token
+        if: >-
+          contains(github.event.comment.body, 'recheck') ||
+          github.event.comment.body == 'I have read the CLA Document and I hereby sign the CLA' ||
+          github.event_name == 'pull_request_target'
         uses: actions/create-github-app-token@v1
         with:
           app-id: ${{ secrets.CLA_APP_ID }}
@@ -66,21 +84,11 @@ jobs:
           owner: netfoundry
           repositories: cla
 
-      - name: Debug - Token Generated
-        if: steps.cla-required.outputs.skip != 'true'
-        run: |
-          if [ -n "${{ steps.app-token.outputs.token }}" ]; then
-            echo "Token generated successfully (length: ${#TOKEN})"
-          else
-            echo "ERROR: Token is empty - check GitHub App setup and secrets"
-          fi
-        env:
-          TOKEN: ${{ steps.app-token.outputs.token }}
-
       - name: "CLA Assistant"
         if: >-
-          steps.cla-required.outputs.skip != 'true' &&
-          ((github.event.comment.body == 'recheck' || github.event.comment.body == 'I have read the CLA Document and I hereby sign the CLA') || github.event_name == 'pull_request_target')
+          contains(github.event.comment.body, 'recheck') ||
+          github.event.comment.body == 'I have read the CLA Document and I hereby sign the CLA' ||
+          github.event_name == 'pull_request_target'
         uses: contributor-assistant/github-action@v2.6.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -89,6 +97,6 @@ jobs:
           path-to-signatures: 'v1.1/cla.json'
           path-to-document: 'https://github.com/netfoundry/cla/raw/main/v1.1/NetFoundry-ICLA-v1.1.pdf'
           branch: 'main'
-          allowlist: dependabot[bot],renovate[bot],github-actions[bot]
+          allowlist: ${{ steps.check-perms.outputs.allowlist }}
           remote-organization-name: netfoundry
           remote-repository-name: cla
