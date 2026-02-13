@@ -32,42 +32,55 @@ jobs:
         run: |
           BASE_ALLOWLIST="dependabot[bot],renovate[bot],github-actions[bot]"
 
-          # Get PR author and head repo - from event context or API
-          if [[ -n "$PR_AUTHOR" ]]; then
-            AUTHOR="$PR_AUTHOR"
-            HEAD="$PR_HEAD_REPO"
-          elif [[ -n "$PR_NUMBER" ]]; then
-            PR_JSON=$(gh api "repos/$BASE_REPO/pulls/$PR_NUMBER" 2>/dev/null || echo '{}')
-            AUTHOR=$(echo "$PR_JSON" | jq -r '.user.login // empty')
-            HEAD=$(echo "$PR_JSON" | jq -r '.head.repo.full_name // empty')
-          fi
-
-          if [[ -z "$AUTHOR" ]]; then
+          if [[ -z "$PR_NUMBER" ]]; then
             echo "allowlist=$BASE_ALLOWLIST" >> $GITHUB_OUTPUT
             exit 0
           fi
 
-          # Non-fork PRs: author has push access
-          if [[ "$HEAD" == "$BASE_REPO" || -z "$HEAD" ]]; then
-            echo "Non-fork PR by $AUTHOR - exempt from CLA"
-            echo "allowlist=$BASE_ALLOWLIST,$AUTHOR" >> $GITHUB_OUTPUT
+          # Get head repo (from event context or API) to detect forks
+          HEAD="$PR_HEAD_REPO"
+          if [[ -z "$HEAD" ]]; then
+            HEAD=$(gh api "repos/$BASE_REPO/pulls/$PR_NUMBER" --jq '.head.repo.full_name' 2>/dev/null || echo "")
+          fi
+
+          # Get all unique committers on the PR
+          COMMITTERS=$(gh api "repos/$BASE_REPO/pulls/$PR_NUMBER/commits" --paginate --jq '.[].author.login' 2>/dev/null | sort -u | grep -v '^$')
+
+          if [[ -z "$COMMITTERS" ]]; then
+            echo "allowlist=$BASE_ALLOWLIST" >> $GITHUB_OUTPUT
             exit 0
           fi
 
-          # Fork PRs: check if author has write+ permission
-          PERM=$(gh api "repos/$BASE_REPO/collaborators/$AUTHOR/permission" --jq '.permission' 2>/dev/null || echo "none")
-          echo "Permission level for $AUTHOR: $PERM"
-          if [[ "$PERM" == "admin" || "$PERM" == "maintain" || "$PERM" == "write" ]]; then
-            echo "$AUTHOR has $PERM access - exempt from CLA"
-            echo "allowlist=$BASE_ALLOWLIST,$AUTHOR" >> $GITHUB_OUTPUT
+          echo "Committers on PR: $(echo $COMMITTERS | tr '\n' ' ')"
+
+          EXEMPT=""
+
+          # Non-fork PRs: all committers have push access
+          if [[ "$HEAD" == "$BASE_REPO" ]]; then
+            echo "Non-fork PR - all committers exempt from CLA"
+            EXEMPT=$(echo "$COMMITTERS" | paste -sd,)
           else
-            echo "$AUTHOR has $PERM access - CLA required"
+            # Fork PRs: check each committer's permission
+            while IFS= read -r user; do
+              [[ -z "$user" ]] && continue
+              PERM=$(gh api "repos/$BASE_REPO/collaborators/$user/permission" --jq '.permission' 2>/dev/null || echo "none")
+              echo "Permission level for $user: $PERM"
+              if [[ "$PERM" == "admin" || "$PERM" == "maintain" || "$PERM" == "write" ]]; then
+                EXEMPT="${EXEMPT:+$EXEMPT,}$user"
+              fi
+            done <<< "$COMMITTERS"
+          fi
+
+          if [[ -n "$EXEMPT" ]]; then
+            echo "Exempt users: $EXEMPT"
+            echo "allowlist=$BASE_ALLOWLIST,$EXEMPT" >> $GITHUB_OUTPUT
+          else
+            echo "No exempt users found"
             echo "allowlist=$BASE_ALLOWLIST" >> $GITHUB_OUTPUT
           fi
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BASE_REPO: ${{ github.repository }}
-          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
           PR_HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
           PR_NUMBER: ${{ github.event.pull_request.number || github.event.issue.number }}
 
