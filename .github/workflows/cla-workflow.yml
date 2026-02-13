@@ -20,18 +20,44 @@ on:
 jobs:
   CLAAssistant:
     runs-on: ubuntu-latest
-    # Skip CLA check for org members/collaborators/owners (covered by employment agreement)
-    # COLLABORATOR = access via team permissions, MEMBER = org member, OWNER = org owner
-    # Always run for issue_comment events so external contributors can sign via PR comment
+    # Always run for issue_comment events so external contributors can sign via PR comment.
+    # For pull_request_target events, permission check happens in steps below.
     if: >-
       github.event_name == 'issue_comment' ||
-      !contains(fromJSON('["MEMBER","COLLABORATOR","OWNER"]'),
-        github.event.pull_request.author_association)
+      github.event_name == 'pull_request_target'
     steps:
       - name: Debug - Workflow Version
-        run: echo "CLA Workflow v3 - Reusable workflow with GitHub App auth (2026-02-04)"
+        run: echo "CLA Workflow v4 - Skip CLA for contributors with write access (2026-02-13)"
+
+      - name: Check if CLA is required
+        id: cla-required
+        if: github.event_name == 'pull_request_target'
+        run: |
+          # Non-fork PRs: author has push access, skip CLA
+          if [[ "$HEAD_REPO" == "$BASE_REPO" ]]; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+            echo "Non-fork PR - CLA not required"
+            exit 0
+          fi
+
+          # Fork PRs: check if author has write permission on the base repo
+          PERM=$(gh api "repos/$BASE_REPO/collaborators/$AUTHOR/permission" --jq '.permission' 2>/dev/null || echo "none")
+          echo "Permission level for $AUTHOR: $PERM"
+          if [[ "$PERM" == "admin" || "$PERM" == "maintain" || "$PERM" == "write" ]]; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+            echo "Author has write access - CLA not required"
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+            echo "Author does not have write access - CLA required"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          BASE_REPO: ${{ github.repository }}
+          AUTHOR: ${{ github.event.pull_request.user.login }}
 
       - name: Generate GitHub App Token
+        if: steps.cla-required.outputs.skip != 'true'
         id: app-token
         uses: actions/create-github-app-token@v1
         with:
@@ -41,6 +67,7 @@ jobs:
           repositories: cla
 
       - name: Debug - Token Generated
+        if: steps.cla-required.outputs.skip != 'true'
         run: |
           if [ -n "${{ steps.app-token.outputs.token }}" ]; then
             echo "Token generated successfully (length: ${#TOKEN})"
@@ -51,7 +78,9 @@ jobs:
           TOKEN: ${{ steps.app-token.outputs.token }}
 
       - name: "CLA Assistant"
-        if: (github.event.comment.body == 'recheck' || github.event.comment.body == 'I have read the CLA Document and I hereby sign the CLA') || github.event_name == 'pull_request_target'
+        if: >-
+          steps.cla-required.outputs.skip != 'true' &&
+          ((github.event.comment.body == 'recheck' || github.event.comment.body == 'I have read the CLA Document and I hereby sign the CLA') || github.event_name == 'pull_request_target')
         uses: contributor-assistant/github-action@v2.6.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

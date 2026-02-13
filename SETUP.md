@@ -120,9 +120,12 @@ done
 5. Verify the signature appears in the versioned `cla.json` (e.g., `v1.1/cla.json`) in this repo
 6. Verify the PR status check passes
 
-## Organization Members
+## Who Is Exempt
 
-The workflow automatically skips the CLA check for organization members and owners. Employees don't need to sign - their contributions are covered by their employment agreement.
+The workflow automatically skips the CLA check for anyone with **write**,
+**maintain**, or **admin** permissions on the repository — even if they open a
+PR from a fork. This covers org members in teams with write access, direct
+collaborators, and repo owners.
 
 ## Bot Allowlist
 
