@@ -138,6 +138,40 @@ To add additional users (e.g., contractors not in the org), either:
 - Add them to the allowlist in `cla-workflow.yml`
 - Or add them directly to the current version's `cla.json`
 
+## Recording Offline Signatures
+
+When a contributor (typically a corporate contributor) signs the CLA out-of-band -- emails us a
+signed PDF, signs on paper, etc. -- they have no PR comment for the bot to record. Use the
+**Record offline CLA signature** workflow in this repo to add them to the ledger:
+
+1. Go to the Actions tab in `netfoundry/cla`.
+2. Select "Record offline CLA signature" -> "Run workflow".
+3. Fill in:
+   - **username** -- the contributor's GitHub handle (with or without `@`).
+   - **reason** -- short justification, e.g. `Signed ICLA emailed 2026-05-17, Acme Corp`. This is
+     stored in the JSON entry as a `note` field and in the commit message, so future maintainers
+     can answer "why is this person in the ledger without a sign comment?".
+   - **cla_version** -- defaults to `v1.1`; change when a new version is current.
+4. Run. The workflow resolves the user's numeric GitHub id, appends an entry to
+   `<version>/cla.json`, and commits to `main` as `nf-cla-bot[bot]`.
+
+The workflow refuses to add a duplicate (it matches by numeric id, so a later username change does
+not bypass the check) and fails loudly if the GitHub user does not exist.
+
+### Running locally
+
+All logic lives in `scripts/add-cla-signature.sh`, so you can preview a change before pushing:
+
+```bash
+GH_TOKEN=$(gh auth token) bash scripts/add-cla-signature.sh \
+    --username someone \
+    --reason "Signed ICLA emailed 2026-05-17, Acme Corp" \
+    --no-push
+```
+
+`--no-push` leaves the commit local. Drop the flag (and use a token with write access to
+`netfoundry/cla`) to push directly.
+
 ## CLA Documents
 
 The workflows link to the official NetFoundry CLA PDFs:

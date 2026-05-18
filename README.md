@@ -36,7 +36,9 @@ If you're contributing on behalf of your employer, your company needs to sign a 
 3. Email the signed agreement to **cla@netfoundry.io**
 4. Include GitHub usernames of employees authorized to contribute
 
-We'll add your team to our allowlist within a few business days.
+We'll add your team to our allowlist within a few business days. Maintainers record offline
+signatures using the [Record offline CLA signature](./SETUP.md#recording-offline-signatures)
+workflow, which commits an entry to the signature ledger as the CLA bot.
 
 ## Repositories Covered
 

@@ -1,0 +1,59 @@
+# Manually record a CLA signature for a contributor who signed out-of-band
+# (emailed us a signed PDF, etc.) and has no PR sign-comment to record.
+#
+# Run from the Actions tab: "Record offline CLA signature" -> Run workflow.
+
+name: "Record offline CLA signature"
+
+on:
+  workflow_dispatch:
+    inputs:
+      username:
+        description: "GitHub username (with or without @)"
+        required: true
+        type: string
+      reason:
+        description: "Justification, e.g. 'Signed ICLA emailed 2026-05-17, Acme Corp'"
+        required: true
+        type: string
+      cla_version:
+        description: "CLA version directory (default v1.1)"
+        required: false
+        type: string
+        default: "v1.1"
+
+permissions:
+  contents: read
+
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.CLA_APP_ID }}
+          private-key: ${{ secrets.CLA_APP_PRIVATE_KEY }}
+          owner: netfoundry
+          repositories: cla
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          fetch-depth: 0
+
+      - name: Configure bot identity
+        run: |
+          git config user.email "nf-cla-bot[bot]@users.noreply.github.com"
+          git config user.name  "nf-cla-bot[bot]"
+
+      - name: Append signature and push
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          bash scripts/add-cla-signature.sh \
+            --username    "${{ inputs.username }}" \
+            --reason      "${{ inputs.reason }}" \
+            --cla-version "${{ inputs.cla_version }}"
