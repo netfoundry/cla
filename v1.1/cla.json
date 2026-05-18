@@ -39,6 +39,15 @@
       "created_at": "2026-05-15T16:00:17Z",
       "repoId": 449463304,
       "pullRequestNo": 408
+    },
+    {
+      "name": "adrianenderlin",
+      "id": 98649543,
+      "comment_id": 0,
+      "created_at": "2026-05-18T12:53:39Z",
+      "repoId": 0,
+      "pullRequestNo": 0,
+      "note": "Signed ICLA emailed 2026-05-14"
     }
   ]
 }
