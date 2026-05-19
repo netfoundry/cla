@@ -94,22 +94,38 @@ mv "$TMP" "$LEDGER"
 
 echo "Appended entry for $RESOLVED_LOGIN ($USER_ID) to $LEDGER"
 
-cd "$REPO_ROOT"
-
-# Configure committer identity only if not already set (CI sets these).
-if [[ -z "$(git config user.email || true)" ]]; then
-  git config user.email "nf-cla-bot@users.noreply.github.com"
-  git config user.name  "nf-cla-bot"
+if [[ "$DO_PUSH" -ne 1 ]]; then
+  echo "Skipped push (--no-push). Ledger modified locally; no commit made."
+  exit 0
 fi
 
-git add "$CLA_VERSION/cla.json"
-git commit -m "Manually record CLA signature for @$RESOLVED_LOGIN
+# Commit via the GitHub Contents API so the commit is authored by the App's
+# bot identity and signed/verified by GitHub. A plain `git push` with the App
+# token works, but the resulting commit is unsigned and uses whatever local
+# git user.name/email was configured.
+
+CLA_REPO="${CLA_REPO:-netfoundry/cla}"
+CLA_BRANCH="${CLA_BRANCH:-main}"
+LEDGER_PATH="$CLA_VERSION/cla.json"
+
+echo "Fetching current SHA for $LEDGER_PATH on $CLA_REPO@$CLA_BRANCH"
+CURRENT_SHA=$(gh api "repos/$CLA_REPO/contents/$LEDGER_PATH?ref=$CLA_BRANCH" --jq '.sha')
+if [[ -z "$CURRENT_SHA" || "$CURRENT_SHA" == "null" ]]; then
+  echo "ERROR: could not fetch current SHA for $LEDGER_PATH" >&2
+  exit 1
+fi
+
+NEW_CONTENT_B64=$(base64 -w0 < "$LEDGER" 2>/dev/null || base64 < "$LEDGER" | tr -d '\n')
+
+COMMIT_MSG="Manually record CLA signature for @$RESOLVED_LOGIN
 
 $REASON"
 
-if [[ "$DO_PUSH" -eq 1 ]]; then
-  git push origin HEAD:main
-  echo "Pushed signature commit to main."
-else
-  echo "Skipped push (--no-push). Commit is local."
-fi
+echo "Committing via Contents API (will be authored by the App bot and verified)"
+gh api --method PUT "repos/$CLA_REPO/contents/$LEDGER_PATH" \
+  -f message="$COMMIT_MSG" \
+  -f content="$NEW_CONTENT_B64" \
+  -f sha="$CURRENT_SHA" \
+  -f branch="$CLA_BRANCH" >/dev/null
+
+echo "Pushed signature commit to $CLA_REPO@$CLA_BRANCH."
