@@ -66,6 +66,14 @@
       "repoId": 0,
       "pullRequestNo": 0,
       "note": "test cla commit"
+    },
+    {
+      "name": "vladimir-o-razuvayev",
+      "id": 4543681,
+      "comment_id": 4661664348,
+      "created_at": "2026-06-09T16:07:44Z",
+      "repoId": 236038378,
+      "pullRequestNo": 1354
     }
   ]
 }
