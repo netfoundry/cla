@@ -128,5 +128,5 @@ jobs:
           remote-repository-name: cla
           suggest-recheck: false
           custom-notsigned-prcomment: |
-            Thank you for your submission! Please read and sign our [Contributor License Agreement]($pathToCLADocument) before we can accept your contribution.
+            Thank you for your submission! Please read and sign our [Contributor License Agreement](https://github.com/netfoundry/cla/raw/main/v1.1/NetFoundry-ICLA-v1.1.pdf) before we can accept your contribution.
             <br/>You can retrigger this check by commenting **recheck cla** on this PR.
