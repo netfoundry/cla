@@ -37,6 +37,17 @@ jobs:
             exit 0
           fi
 
+          # Maintainer waiver: a 'cla-waived' label on the PR skips the CLA check
+          # entirely. Labels can only be applied by users with triage/write, so the
+          # waiver is inherently maintainer-gated.
+          LABELS=$(gh api "repos/$BASE_REPO/issues/$PR_NUMBER/labels" --jq '.[].name' 2>/dev/null || echo "")
+          if echo "$LABELS" | grep -qx 'cla-waived'; then
+            echo "cla-waived label present - CLA check skipped"
+            echo "cla-needed=false" >> $GITHUB_OUTPUT
+            echo "allowlist=$BASE_ALLOWLIST" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
           # Get head repo (from event context or API) to detect forks
           HEAD="$PR_HEAD_REPO"
           if [[ -z "$HEAD" ]]; then

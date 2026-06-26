@@ -80,7 +80,7 @@ on:
   issue_comment:
     types: [created]
   pull_request_target:
-    types: [opened, closed, synchronize]
+    types: [opened, closed, synchronize, labeled]
 
 permissions:
   actions: write
@@ -137,6 +137,24 @@ These accounts bypass the CLA check:
 To add additional users (e.g., contractors not in the org), either:
 - Add them to the allowlist in `cla-workflow.yml`
 - Or add them directly to the current version's `cla.json`
+
+## Waiving the CLA on a single PR (`cla-waived` label)
+
+Sometimes a PR should not require a CLA at all: a docs-only change, an `adopters.md`
+entry, a contribution a maintainer is willing to vouch for, etc. Apply the
+**`cla-waived`** label to the PR and the CLA check is skipped for that PR.
+
+- The label is a maintainer vouch: only users with **triage**, **write**, **maintain**,
+  or **admin** on the repo can apply labels, so the waiver is inherently gated.
+- Applying the label fires a `pull_request_target` `labeled` event, which re-runs the
+  workflow and clears the check. (This requires `labeled` in the caller's
+  `pull_request_target` types -- it is included in the template. Older caller files
+  without it still work via a `recheck cla` comment.)
+- The waiver is per-PR. It does not record a signature, so the contributor will still be
+  prompted on their next PR unless they sign or get allowlisted.
+- Create the `cla-waived` label in each repo where you want to use it (GitHub does not
+  share labels across repos). Any color/description is fine; only the exact name
+  `cla-waived` is matched.
 
 ## Recording Offline Signatures
 
