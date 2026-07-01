@@ -54,8 +54,11 @@ jobs:
             HEAD=$(gh api "repos/$BASE_REPO/pulls/$PR_NUMBER" --jq '.head.repo.full_name' 2>/dev/null || echo "")
           fi
 
-          # Get all unique committers on the PR
-          COMMITTERS=$(gh api "repos/$BASE_REPO/pulls/$PR_NUMBER/commits" --paginate --jq '.[].author.login' 2>/dev/null | sort -u | grep -v '^$')
+          # Get all unique committers on the PR. Use `// empty` so commits whose
+          # author is not linked to a GitHub account (author == null) are skipped
+          # rather than making jq error out. `|| true` keeps an empty result from
+          # tripping `set -e` via grep's no-match exit code.
+          COMMITTERS=$(gh api "repos/$BASE_REPO/pulls/$PR_NUMBER/commits" --paginate --jq '.[].author.login // empty' 2>/dev/null | sort -u | grep -v '^$' || true)
 
           if [[ -z "$COMMITTERS" ]]; then
             echo "allowlist=$BASE_ALLOWLIST" >> $GITHUB_OUTPUT
