@@ -132,6 +132,14 @@
       "created_at": "2026-09-18T00:57:09Z",
       "repoId": 175814075,
       "pullRequestNo": 375
+    },
+    {
+      "name": "benedikt-schaber",
+      "id": 83299891,
+      "comment_id": 5773962035,
+      "created_at": "2026-09-22T09:11:32Z",
+      "repoId": 234617575,
+      "pullRequestNo": 948
     }
   ]
 }
